@@ -87,6 +87,6 @@ pide; queda anotado por si el cliente lo solicita.
 ## Pendiente
 
 - Revisión por otro integrante antes de dar por cerrados los tickets: **no se hizo**.
-- Las ramas `fix/bug-00X` existen solo en local; `main` contiene las tres integraciones.
+- Las ramas `fix/bug-00X` están en el remoto junto con `main`, que contiene las tres integraciones.
 - Nueva dependencia de desarrollo: `shared_preferences_platform_interface` (ya era transitiva), usada
   solo en pruebas para tener un almacenamiento en memoria.
