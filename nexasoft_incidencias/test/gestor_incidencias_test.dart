@@ -45,8 +45,8 @@ void main() {
 
     test('una incidencia nueva sigue existiendo al reiniciar', () async {
       final g = await abrirApp();
-      await g.crear('Monitor sin señal', 'Registro ficticio', 'Cliente Demo',
-          'Hardware');
+      await g.crear(
+          'Monitor sin señal', 'Registro ficticio', 'Cliente Demo', 'Hardware');
 
       final reabierta = await abrirApp();
       expect(reabierta.incidencias.length, 11);
@@ -58,8 +58,8 @@ void main() {
       await g.cambiarEstado('INC-999', 'Resuelta');
 
       final reabierta = await abrirApp();
-      expect(reabierta.incidencias.where((x) => x.estado == 'Resuelta').length,
-          3);
+      expect(
+          reabierta.incidencias.where((x) => x.estado == 'Resuelta').length, 3);
     });
   });
 
@@ -95,8 +95,8 @@ void main() {
         () async {
       final g = await abrirApp();
       await g.cambiarEstado('INC-103', 'En proceso');
-      await g.crear('Monitor sin señal', 'Registro ficticio', 'Cliente Demo',
-          'Hardware');
+      await g.crear(
+          'Monitor sin señal', 'Registro ficticio', 'Cliente Demo', 'Hardware');
       expect(tablero(g), {'Pendiente': 5, 'En proceso': 3, 'Resuelta': 3});
       expect(tablero(g), conteoManual(g));
     });
@@ -104,8 +104,8 @@ void main() {
     test('los totales son iguales antes y despues de reiniciar', () async {
       final g = await abrirApp();
       await g.cambiarEstado('INC-101', 'Resuelta');
-      await g.crear('Monitor sin señal', 'Registro ficticio', 'Cliente Demo',
-          'Hardware');
+      await g.crear(
+          'Monitor sin señal', 'Registro ficticio', 'Cliente Demo', 'Hardware');
       final antes = tablero(g);
 
       final reabierta = await abrirApp();
@@ -118,6 +118,45 @@ void main() {
       final antes = tablero(g);
       g.buscar('WiFi');
       expect(tablero(g), antes);
+    });
+  });
+
+  group('BUG-002 busqueda', () {
+    List<String> ids(GestorIncidencias g, String texto) =>
+        g.buscar(texto).map((x) => x.id).toList();
+
+    test('ignora mayusculas y minusculas', () async {
+      final g = await abrirApp();
+      expect(ids(g, 'wifi'), ['INC-102']);
+      expect(ids(g, 'WiFi'), ['INC-102']);
+      expect(ids(g, 'WIFI'), ['INC-102']);
+    });
+
+    test('busca tambien en la descripcion', () async {
+      final g = await abrirApp();
+      expect(ids(g, 'túnel'), ['INC-106']);
+      expect(ids(g, 'TÚNEL'), ['INC-106']);
+    });
+
+    test('ignora espacios al inicio y al final', () async {
+      final g = await abrirApp();
+      expect(ids(g, '  WiFi  '), ['INC-102']);
+    });
+
+    test('sin texto devuelve todos los registros', () async {
+      final g = await abrirApp();
+      expect(g.buscar('').length, 10);
+      expect(g.buscar('   ').length, 10);
+    });
+
+    test('una palabra presente en titulo y descripcion no duplica', () async {
+      final g = await abrirApp();
+      expect(ids(g, 'pantalla'), ['INC-103', 'INC-110']);
+    });
+
+    test('sin coincidencias devuelve lista vacia', () async {
+      final g = await abrirApp();
+      expect(g.buscar('zzz'), isEmpty);
     });
   });
 }
