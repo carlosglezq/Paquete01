@@ -16,9 +16,18 @@ class _PantallaDetalleState extends State<PantallaDetalle> {
 
   Future<void> cambiar(String? valor) async {
     if (valor == null) return;
+    await guardarCambio(() => widget.gestor.cambiarEstado(widget.id, valor));
+  }
+
+  Future<void> cambiarPrioridad(String? valor) async {
+    if (valor == null) return;
+    await guardarCambio(() => widget.gestor.cambiarPrioridad(widget.id, valor));
+  }
+
+  Future<void> guardarCambio(Future<void> Function() accion) async {
     setState(() => guardando = true);
     try {
-      await widget.gestor.cambiarEstado(widget.id, valor);
+      await accion();
       if (mounted) setState(() {});
     } catch (e) {
       if (mounted) {
@@ -76,6 +85,15 @@ class _PantallaDetalleState extends State<PantallaDetalle> {
                           .map((v) => DropdownMenuItem(value: v, child: Text(v)))
                           .toList(),
                       onChanged: guardando ? null : cambiar,
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      initialValue: item.prioridad,
+                      decoration: const InputDecoration(labelText: 'Prioridad', border: OutlineInputBorder()),
+                      items: Incidencia.prioridades
+                          .map((v) => DropdownMenuItem(value: v, child: Text(v)))
+                          .toList(),
+                      onChanged: guardando ? null : cambiarPrioridad,
                     ),
                     if (guardando) const Padding(
                       padding: EdgeInsets.only(top: 12), child: LinearProgressIndicator(),

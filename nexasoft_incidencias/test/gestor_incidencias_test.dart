@@ -1,6 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'dart:convert';
+
 import 'package:nexasoft_incidencias/services/gestor_incidencias.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 
 /// Simula cerrar y abrir la app: un gestor nuevo que lee el mismo almacenamiento.
@@ -157,6 +160,86 @@ void main() {
     test('sin coincidencias devuelve lista vacia', () async {
       final g = await abrirApp();
       expect(g.buscar('zzz'), isEmpty);
+    });
+  });
+
+  group('FEAT-001 prioridad', () {
+    test('los registros sin prioridad abren como Media', () async {
+      final g = await abrirApp();
+      expect(g.incidencias.map((x) => x.prioridad).toSet(), {'Media'});
+    });
+
+    test('datos guardados por la version anterior abren como Media', () async {
+      // Formato que guardaba la app antes de FEAT-001: sin el campo prioridad.
+      final antiguos = [
+        {
+          'id': 'INC-OLD',
+          'titulo': 'Registro antiguo',
+          'descripcion': 'Guardado sin prioridad',
+          'cliente': 'Cliente Demo',
+          'categoria': 'Redes',
+          'estado': 'En proceso',
+          'fecha': '2026-10-13',
+        },
+      ];
+      await SharedPreferencesAsync()
+          .setString('nexasoft_incidencias_v1', jsonEncode(antiguos));
+
+      final g = await abrirApp();
+      expect(g.incidencias.single.prioridad, 'Media');
+      expect(g.incidencias.single.estado, 'En proceso');
+    });
+
+    test('una incidencia nueva se crea con la prioridad elegida', () async {
+      final g = await abrirApp();
+      await g.crear(
+          'Servidor caido', 'Registro ficticio', 'Cliente Demo', 'Hardware',
+          prioridad: 'Alta');
+
+      final reabierta = await abrirApp();
+      expect(reabierta.incidencias.first.titulo, 'Servidor caido');
+      expect(reabierta.incidencias.first.prioridad, 'Alta');
+    });
+
+    test('sin elegir prioridad se crea como Media', () async {
+      final g = await abrirApp();
+      await g.crear(
+          'Sin prioridad', 'Registro ficticio', 'Cliente Demo', 'Software');
+      expect(g.incidencias.first.prioridad, 'Media');
+    });
+
+    test('cambiar la prioridad se conserva y no altera el estado', () async {
+      final g = await abrirApp();
+      await g.cambiarPrioridad('INC-103', 'Baja');
+
+      final reabierta = await abrirApp();
+      expect(reabierta.porId('INC-103')!.prioridad, 'Baja');
+      expect(reabierta.porId('INC-103')!.estado, 'Pendiente');
+      expect(
+          reabierta.incidencias
+              .where((x) => x.id != 'INC-103')
+              .every((x) => x.prioridad == 'Media'),
+          isTrue);
+    });
+
+    test('cambiar el estado conserva la prioridad', () async {
+      final g = await abrirApp();
+      await g.cambiarPrioridad('INC-101', 'Alta');
+      await g.cambiarEstado('INC-101', 'Resuelta');
+
+      final reabierta = await abrirApp();
+      expect(reabierta.porId('INC-101')!.prioridad, 'Alta');
+      expect(reabierta.porId('INC-101')!.estado, 'Resuelta');
+    });
+
+    test('se rechazan prioridades fuera de Baja, Media y Alta', () async {
+      final g = await abrirApp();
+      expect(
+          () => g.cambiarPrioridad('INC-101', 'Urgente'), throwsArgumentError);
+      expect(() => g.crear('X', 'Y', 'Z', 'Software', prioridad: 'alta'),
+          throwsArgumentError);
+      expect(g.porId('INC-101')!.prioridad, 'Media');
+      expect(g.incidencias.length, 10);
     });
   });
 }
