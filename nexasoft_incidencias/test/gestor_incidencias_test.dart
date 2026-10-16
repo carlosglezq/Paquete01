@@ -242,4 +242,60 @@ void main() {
       expect(g.incidencias.length, 10);
     });
   });
+
+  group('FEAT-002 filtros combinados', () {
+    Future<GestorIncidencias> conPrioridades() async {
+      final g = await abrirApp();
+      await g.cambiarPrioridad('INC-101', 'Alta');
+      await g.cambiarPrioridad('INC-103', 'Alta');
+      await g.cambiarPrioridad('INC-102', 'Alta');
+      await g.cambiarPrioridad('INC-108', 'Baja');
+      return g;
+    }
+
+    List<String> ids(List<dynamic> lista) =>
+        lista.map((x) => x.id as String).toList();
+
+    test('sin texto ni filtros devuelve todo', () async {
+      final g = await conPrioridades();
+      expect(g.filtrar('').length, 10);
+    });
+
+    test('solo estado', () async {
+      final g = await conPrioridades();
+      expect(ids(g.filtrar('', estado: 'En proceso')), ['INC-102', 'INC-106']);
+    });
+
+    test('solo prioridad', () async {
+      final g = await conPrioridades();
+      expect(ids(g.filtrar('', prioridad: 'Alta')),
+          ['INC-101', 'INC-102', 'INC-103']);
+    });
+
+    test('estado y prioridad juntos', () async {
+      final g = await conPrioridades();
+      expect(ids(g.filtrar('', estado: 'Pendiente', prioridad: 'Alta')),
+          ['INC-101', 'INC-103']);
+    });
+
+    test('texto, estado y prioridad juntos', () async {
+      final g = await conPrioridades();
+      expect(ids(g.filtrar('pantalla', estado: 'Pendiente', prioridad: 'Alta')),
+          ['INC-103']);
+    });
+
+    test('combinacion sin resultados devuelve lista vacia', () async {
+      final g = await conPrioridades();
+      expect(
+          g.filtrar('wifi', estado: 'Pendiente', prioridad: 'Alta'), isEmpty);
+    });
+
+    test('los filtros no cambian los totales del tablero', () async {
+      final g = await conPrioridades();
+      g.filtrar('wifi', estado: 'Resuelta', prioridad: 'Baja');
+      expect(
+          [g.contar('Pendiente'), g.contar('En proceso'), g.contar('Resuelta')],
+          [5, 2, 3]);
+    });
+  });
 }

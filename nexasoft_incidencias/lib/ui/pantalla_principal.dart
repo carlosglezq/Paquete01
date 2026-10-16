@@ -16,11 +16,32 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
   bool cargando = true;
   String? error;
   String busqueda = '';
+  String? filtroEstado;
+  String? filtroPrioridad;
+  final buscador = TextEditingController();
+
+  bool get hayFiltros =>
+      busqueda.trim().isNotEmpty || filtroEstado != null || filtroPrioridad != null;
 
   @override
   void initState() {
     super.initState();
     cargar();
+  }
+
+  @override
+  void dispose() {
+    buscador.dispose();
+    super.dispose();
+  }
+
+  void limpiarFiltros() {
+    buscador.clear();
+    setState(() {
+      busqueda = '';
+      filtroEstado = null;
+      filtroPrioridad = null;
+    });
   }
 
   Future<void> cargar() async {
@@ -67,6 +88,26 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
     );
   }
 
+  Widget filtro(String etiqueta, String todos, List<String> opciones,
+      String? actual, ValueChanged<String?> alCambiar) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 3),
+      child: Row(children: [
+        SizedBox(width: 76, child: Text(etiqueta, style: const TextStyle(color: Colors.black54))),
+        Expanded(
+          child: Wrap(spacing: 8, runSpacing: 4, children: [
+            for (final opcion in [null, ...opciones])
+              ChoiceChip(
+                label: Text(opcion ?? todos),
+                selected: actual == opcion,
+                onSelected: (_) => alCambiar(opcion),
+              ),
+          ]),
+        ),
+      ]),
+    );
+  }
+
   Future<void> abrirDetalle(Incidencia item) async {
     await Navigator.push<void>(
       context,
@@ -90,7 +131,7 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
 
   @override
   Widget build(BuildContext context) {
-    final items = g.buscar(busqueda);
+    final items = g.filtrar(busqueda, estado: filtroEstado, prioridad: filtroPrioridad);
     return Scaffold(
       appBar: AppBar(
         title: const Text('NexaSoft | Incidencias'),
@@ -157,6 +198,7 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 5),
                           child: TextField(
+                            controller: buscador,
                             decoration: const InputDecoration(
                               labelText: 'Buscar incidencias',
                               hintText: 'Ejemplo: WiFi, correo, pantalla',
@@ -166,16 +208,45 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
                             onChanged: (texto) => setState(() => busqueda = texto),
                           ),
                         ),
+                        filtro('Estado', 'Todos', Incidencia.estados, filtroEstado,
+                            (v) => setState(() => filtroEstado = v)),
+                        filtro('Prioridad', 'Todas', Incidencia.prioridades, filtroPrioridad,
+                            (v) => setState(() => filtroPrioridad = v)),
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text('${items.length} registros', style: const TextStyle(color: Colors.black54)),
-                          ),
+                          padding: const EdgeInsets.fromLTRB(20, 2, 12, 2),
+                          child: Row(children: [
+                            Text('${items.length} de ${g.incidencias.length} registros',
+                                style: const TextStyle(color: Colors.black54)),
+                            const Spacer(),
+                            TextButton.icon(
+                              onPressed: hayFiltros ? limpiarFiltros : null,
+                              icon: const Icon(Icons.filter_alt_off_outlined),
+                              label: const Text('Limpiar búsqueda y filtros'),
+                            ),
+                          ]),
                         ),
                         Expanded(
                           child: items.isEmpty
-                              ? const Center(child: Text('No se encontraron incidencias'))
+                              ? Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(24),
+                                    child: Column(mainAxisSize: MainAxisSize.min, children: [
+                                      const Icon(Icons.search_off, size: 40, color: Colors.black38),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        hayFiltros
+                                            ? 'Ninguna incidencia cumple la búsqueda y los filtros activos.'
+                                            : 'No hay incidencias registradas.',
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      if (hayFiltros)
+                                        TextButton(
+                                          onPressed: limpiarFiltros,
+                                          child: const Text('Mostrar todas las incidencias'),
+                                        ),
+                                    ]),
+                                  ),
+                                )
                               : ListView.builder(
                                   padding: const EdgeInsets.only(left: 12, right: 12, bottom: 100),
                                   itemCount: items.length,
