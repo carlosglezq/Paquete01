@@ -36,4 +36,4 @@ flutter run -d chrome
 
 Pruebas: `cd nexasoft_incidencias && flutter test` (39 pruebas). Versión revisada: `1.1.0`, etiqueta `v1.1.0`.
 
-Reproducción: [`docs/dia01/notas_investigacion.md`](docs/dia01/notas_investigacion.md) · Correcciones: [`docs/dia02/notas_correcciones.md`](docs/dia02/notas_correcciones.md) · FEAT-001: [`docs/dia03/notas_feat-001.md`](docs/dia03/notas_feat-001.md). · FEAT-002 y regresión: [`docs/dia04/notas_feat-002_y_regresion.md`](docs/dia04/notas_feat-002_y_regresion.md) · **Reporte final: [`docs/reporte_final.md`](docs/reporte_final.md)**.
+Reproducción: [`docs/dia01/notas_investigacion.md`](docs/dia01/notas_investigacion.md) · Correcciones: [`docs/dia02/notas_correcciones.md`](docs/dia02/notas_correcciones.md) · FEAT-001: [`docs/dia03/notas_feat-001.md`](docs/dia03/notas_feat-001.md) · FEAT-002 y regresión: [`docs/dia04/notas_feat-002_y_regresion.md`](docs/dia04/notas_feat-002_y_regresion.md) · **Reporte final: [`docs/reporte_final.md`](docs/reporte_final.md)**.
