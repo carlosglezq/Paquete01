@@ -1,7 +1,7 @@
 name: nexasoft_incidencias
 description: Aplicacion de entrenamiento - mantenimiento de software heredado.
 publish_to: none
-version: 1.0.0+1
+version: 1.1.0+2
 
 environment:
   sdk: '>=3.4.0 <4.0.0'
